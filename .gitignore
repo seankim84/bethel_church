@@ -1,0 +1,10 @@
+node_modules
+.next
+.env
+.env.local
+
+# SQLite (더 이상 사용하지 않음 — Supabase PostgreSQL 사용)
+*.db
+*.db-journal
+prisma/dev.db
+prisma/dev.db-journal
