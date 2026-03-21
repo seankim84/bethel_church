@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
-import { fetchYoutubeVideos, resolveChannelId } from "@/lib/youtube";
+import { resolveChannelId } from "@/lib/youtube";
 
 export async function GET() {
   // DB에서 직접 읽어서 실제 저장 값 확인
@@ -16,35 +16,54 @@ export async function GET() {
   const map: Record<string, string> = {};
   for (const row of rows ?? []) map[row.key] = row.value;
 
-  const channelId = map["youtube_channel_id"] ?? "(없음)";
-  const apiKey = map["youtube_api_key"] ?? "(없음)";
-  const hasChannel = !!map["youtube_channel_id"];
-  const hasKey = !!map["youtube_api_key"];
+  const channelInput = map["youtube_channel_id"] ?? "";
+  const apiKey = map["youtube_api_key"] ?? "";
 
-  if (!hasChannel || !hasKey) {
+  if (!channelInput || !apiKey) {
     return NextResponse.json({
       ok: false,
-      message: `DB에 저장된 값 확인:\n채널 ID: "${channelId}"\nAPI Key: "${apiKey.slice(0, 10)}..."\n\n값이 비어있습니다. 저장 버튼을 다시 눌러주세요.`
+      message: `DB에 저장된 값이 비어있습니다. 저장 버튼을 다시 눌러주세요.`,
     });
   }
 
-  // 채널 ID 해석
-  const resolvedChannelId = await resolveChannelId(apiKey, channelId).catch(() => "");
-  if (!resolvedChannelId) {
+  // 채널 ID 해석 (channels API, 1유닛)
+  const channelId = await resolveChannelId(apiKey, channelInput).catch(() => "");
+  if (!channelId) {
     return NextResponse.json({
       ok: false,
-      message: `채널을 찾을 수 없습니다.\n입력값: "${channelId}"\n\nYouTube Studio > 채널 설정 > 채널 고급 설정에서 UC로 시작하는 채널 ID를 복사해주세요.`
+      message: `채널을 찾을 수 없습니다.\n입력값: "${channelInput}"\n\nYouTube Studio > 채널 설정 > 채널 고급 설정에서 UC로 시작하는 채널 ID를 복사해주세요.`,
     });
   }
 
-  // 영상 조회
-  const { items } = await fetchYoutubeVideos({ apiKey, channelInput: resolvedChannelId, maxResults: 1 });
-  const title = items[0]?.title;
+  // playlistItems API로 영상 조회 (1유닛, search 100유닛 대신)
+  const playlistId = "UU" + channelId.slice(2);
+  const params = new URLSearchParams({
+    key: apiKey,
+    playlistId,
+    part: "snippet",
+    maxResults: "1",
+  });
 
+  const res = await fetch(
+    `https://www.googleapis.com/youtube/v3/playlistItems?${params.toString()}`,
+    { cache: "no-store" }
+  );
+  const data = await res.json();
+
+  if (!res.ok) {
+    const errMsg = data?.error?.message || JSON.stringify(data?.error || data);
+    const errCode = data?.error?.code || res.status;
+    return NextResponse.json({
+      ok: false,
+      message: `채널 인식 성공 (${channelId})\n영상 조회 실패 [${errCode}]: ${errMsg}`,
+    });
+  }
+
+  const title = data.items?.[0]?.snippet?.title;
   if (!title) {
     return NextResponse.json({
       ok: false,
-      message: `채널 인식 성공 (${resolvedChannelId})\n하지만 영상을 불러오지 못했습니다.\n\nGoogle Cloud Console에서 YouTube Data API v3가 활성화되어 있는지 확인하세요.`
+      message: `채널 인식 성공 (${channelId})\n채널에 공개된 영상이 없거나 업로드 목록이 비어있습니다.`,
     });
   }
 

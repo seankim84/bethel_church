@@ -40,6 +40,12 @@ function safeDecode(value: string) {
   }
 }
 
+// UC... → UU... 변환으로 업로드 플레이리스트 ID 생성 (API 1유닛)
+function uploadsPlaylistId(channelId: string) {
+  return "UU" + channelId.slice(2);
+}
+
+// channels API로 채널 ID 해석 (1유닛, search 사용 안 함)
 export async function resolveChannelId(apiKey: string, channelInput: string) {
   const normalized = normalizeChannelInput(channelInput);
   if (!normalized) return "";
@@ -47,71 +53,84 @@ export async function resolveChannelId(apiKey: string, channelInput: string) {
 
   const handle = safeDecode(normalized.startsWith("@") ? normalized.slice(1) : normalized);
 
+  // forHandle로 채널 조회 (1유닛)
   const byHandleParams = new URLSearchParams({
     key: apiKey,
     part: "id",
-    forHandle: handle
+    forHandle: handle,
   });
-  const byHandleRes = await fetch(`https://www.googleapis.com/youtube/v3/channels?${byHandleParams.toString()}`, {
-    cache: "no-store"
-  });
+  const byHandleRes = await fetch(
+    `https://www.googleapis.com/youtube/v3/channels?${byHandleParams.toString()}`,
+    { cache: "no-store" }
+  );
   if (byHandleRes.ok) {
     const byHandleData = await byHandleRes.json();
     const channelId = byHandleData.items?.[0]?.id;
     if (channelId) return channelId as string;
   }
 
-  const searchParams = new URLSearchParams({
+  // username으로 채널 조회 (1유닛) — search 대신 channels API 사용
+  const byUsernameParams = new URLSearchParams({
     key: apiKey,
-    part: "snippet",
-    q: handle,
-    type: "channel",
-    maxResults: "1"
+    part: "id",
+    forUsername: handle,
   });
-  const searchRes = await fetch(`https://www.googleapis.com/youtube/v3/search?${searchParams.toString()}`, {
-    cache: "no-store"
-  });
-  if (!searchRes.ok) return "";
-  const searchData = await searchRes.json();
-  return (searchData.items?.[0]?.id?.channelId || "") as string;
+  const byUsernameRes = await fetch(
+    `https://www.googleapis.com/youtube/v3/channels?${byUsernameParams.toString()}`,
+    { cache: "no-store" }
+  );
+  if (byUsernameRes.ok) {
+    const byUsernameData = await byUsernameRes.json();
+    const channelId = byUsernameData.items?.[0]?.id;
+    if (channelId) return channelId as string;
+  }
+
+  return "";
 }
 
+// playlistItems API 사용 — 1유닛/호출 (search는 100유닛/호출)
 export async function fetchYoutubeVideos({
   apiKey,
   channelInput,
   maxResults,
-  query,
-  pageToken
+  pageToken,
 }: FetchYoutubeVideosParams) {
   if (!apiKey || !channelInput) return { items: [] as YoutubeVideo[], nextPageToken: "" };
+
   const channelId = await resolveChannelId(apiKey, channelInput);
   if (!channelId) return { items: [] as YoutubeVideo[], nextPageToken: "" };
 
+  const playlistId = uploadsPlaylistId(channelId);
+
   const params = new URLSearchParams({
     key: apiKey,
-    channelId,
+    playlistId,
     part: "snippet",
-    order: "date",
     maxResults: String(maxResults),
-    type: "video"
   });
-  if (query) params.append("q", query);
   if (pageToken) params.append("pageToken", pageToken);
 
-  const res = await fetch(`https://www.googleapis.com/youtube/v3/search?${params.toString()}`, {
-    cache: "no-store"
-  });
+  const res = await fetch(
+    `https://www.googleapis.com/youtube/v3/playlistItems?${params.toString()}`,
+    { cache: "no-store" }
+  );
   if (!res.ok) return { items: [] as YoutubeVideo[], nextPageToken: "" };
 
   const data = await res.json();
-  const items: YoutubeVideo[] = (data.items || []).map((i: any) => ({
-    id: i.id.videoId,
-    title: i.snippet.title,
-    thumbnail: i.snippet.thumbnails?.high?.url || i.snippet.thumbnails?.default?.url,
-    publishedAt: i.snippet.publishedAt
-  }));
+  const items: YoutubeVideo[] = (data.items || [])
+    .filter((i: any) => i.snippet?.resourceId?.videoId) // 삭제된 영상 제외
+    .map((i: any) => ({
+      id: i.snippet.resourceId.videoId,
+      title: i.snippet.title,
+      thumbnail:
+        i.snippet.thumbnails?.high?.url ||
+        i.snippet.thumbnails?.medium?.url ||
+        i.snippet.thumbnails?.default?.url,
+      publishedAt: i.snippet.publishedAt,
+    }));
+
   return {
     items,
-    nextPageToken: (data.nextPageToken || "") as string
+    nextPageToken: (data.nextPageToken || "") as string,
   };
 }

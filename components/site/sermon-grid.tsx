@@ -12,7 +12,20 @@ export function SermonGrid({ sermons }: { sermons: Sermon[] }) {
   const side = sermons.slice(1, 5);
 
   if (!main) {
-    return <p className="text-sm text-slate-500">표시할 설교 영상이 없습니다.</p>;
+    return (
+      <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-200 bg-white py-16 text-center">
+        <p className="text-sm font-medium text-slate-400">설교 영상을 불러오는 중입니다.</p>
+        <p className="mt-1 text-xs text-slate-300">YouTube API 연결 후 잠시 후 다시 확인해 주세요.</p>
+        <a
+          href="https://www.youtube.com/@사이공베델교회"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-4 rounded-lg bg-[#1a2744] px-4 py-2 text-xs font-semibold text-white hover:opacity-80 transition-opacity"
+        >
+          YouTube 채널 바로가기
+        </a>
+      </div>
+    );
   }
 
   const formatDate = (date: string) =>
