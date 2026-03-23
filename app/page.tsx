@@ -70,7 +70,7 @@ export default async function HomePage() {
       <HeroSlider banners={banners} />
 
       {/* Vision / Motto Section */}
-      <section className="bg-white py-12 md:py-20">
+      <section className="bg-white py-6 md:py-10">
         <div className="container-page">
           <div className="mx-auto max-w-3xl text-center">
             <span className="mb-5 inline-block rounded-full bg-[#1a2744] px-4 py-1.5 text-xs font-bold uppercase tracking-[0.2em] text-white">
@@ -95,7 +95,7 @@ export default async function HomePage() {
       {_bulletin && <WeeklyBulletin bulletin={_bulletin} />}
 
       {/* Sermon Section */}
-      <section className="section-space bg-[#f8f9fb]">
+      <section className="py-6 md:py-10 bg-[#f8f9fb]">
         <div className="container-page">
           <div className="mb-6 flex items-end justify-between md:mb-8">
             <div>
@@ -114,7 +114,7 @@ export default async function HomePage() {
       </section>
 
       {/* Worship Section */}
-      <section className="section-space bg-white">
+      <section className="py-6 md:py-10 bg-white">
         <div className="container-page">
           <p className="section-title-en">WORSHIP</p>
           <h2 className="section-title-ko">예배 안내</h2>
@@ -182,7 +182,7 @@ export default async function HomePage() {
       </section>
 
       {/* Notice & Gallery Section */}
-      <section className="section-space bg-[#f8f9fb]">
+      <section className="py-6 md:py-10 bg-[#f8f9fb]">
         <div className="container-page">
           <div className="grid gap-10 md:grid-cols-2">
 
@@ -290,7 +290,7 @@ export default async function HomePage() {
       </section>
 
       {/* Bottom CTA */}
-      <section className="bg-[#1a2744] py-14 md:py-20">
+      <section className="bg-[#1a2744] py-7 md:py-10">
         <div className="container-page text-center">
           <p className="mb-3 text-xs font-bold uppercase tracking-[0.2em] text-[#f5c842]">사이공 베델교회</p>
           <h2 className="text-xl font-extrabold text-white sm:text-2xl md:text-3xl">

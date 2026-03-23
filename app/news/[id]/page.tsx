@@ -3,6 +3,7 @@ import Link from "next/link";
 import { supabaseAdmin } from "@/lib/supabase";
 import type { Notice } from "@/lib/db";
 import { ChevronLeft } from "lucide-react";
+import { NoticeImageGallery } from "@/components/site/notice-image-gallery";
 
 export default async function NoticeDetail({ params }: { params: { id: string } }) {
   const id = Number(params.id);
@@ -47,16 +48,7 @@ export default async function NoticeDetail({ params }: { params: { id: string } 
 
       {/* 첨부 이미지 */}
       {images.length > 0 && (
-        <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3">
-          {images.map((img) => (
-            <img
-              key={img.id}
-              src={img.url}
-              alt={notice.title}
-              className="w-full rounded-lg object-cover"
-            />
-          ))}
-        </div>
+        <NoticeImageGallery images={images} title={notice.title} />
       )}
 
       {/* 본문 */}
