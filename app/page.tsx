@@ -4,6 +4,7 @@ import Link from "next/link";
 import { supabaseAdmin } from "@/lib/supabase";
 import { HeroSlider } from "@/components/site/hero-slider";
 import { SermonGrid } from "@/components/site/sermon-grid";
+import { WeeklyBulletin } from "@/components/site/weekly-bulletin";
 import { getYoutubeConfig } from "@/lib/site";
 import { fetchYoutubeVideos } from "@/lib/youtube";
 import { BookOpen, Heart, Home, Sun, Users, ArrowRight, Pin } from "lucide-react";
@@ -29,12 +30,14 @@ export default async function HomePage() {
     { data: _notices },
     { data: _gallery },
     sermons,
+    { data: _bulletin },
   ] = await Promise.all([
     supabaseAdmin.from("banners").select("*").eq("is_active", true).order("order").order("id", { ascending: false }).limit(5),
     supabaseAdmin.from("worship_schedules").select("*").order("order"),
     supabaseAdmin.from("notices").select("*").order("is_pinned", { ascending: false }).order("created_at", { ascending: false }).limit(5),
     supabaseAdmin.from("gallery_posts").select("*, images:gallery_post_images(*)").order("created_at", { ascending: false }).limit(6),
     getSermons(),
+    supabaseAdmin.from("bulletins").select("*").eq("is_active", true).order("bulletin_date", { ascending: false }).limit(1).maybeSingle(),
   ]);
 
   const banners = _banners ?? [];
@@ -87,6 +90,9 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* Weekly Bulletin Section */}
+      {_bulletin && <WeeklyBulletin bulletin={_bulletin} />}
 
       {/* Sermon Section */}
       <section className="section-space bg-[#f8f9fb]">

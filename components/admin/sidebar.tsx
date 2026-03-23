@@ -9,6 +9,7 @@ const menus = [
   { href: "/admin/banners", label: "배너 관리" },
   { href: "/admin/sermon", label: "설교 영상 설정" },
   { href: "/admin/worship", label: "예배 안내 관리" },
+  { href: "/admin/bulletin", label: "주보 관리" },
   { href: "/admin/notices", label: "공지사항 관리" },
   { href: "/admin/gallery", label: "갤러리 관리" },
   { href: "/admin/settings", label: "기본 정보 관리" }
