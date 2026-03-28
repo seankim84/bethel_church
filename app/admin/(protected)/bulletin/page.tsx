@@ -64,28 +64,13 @@ export default function AdminBulletinPage() {
     setForm((prev) => ({ ...prev, bulletin_date: dateStr, title: dateToTitle(dateStr) }));
   }
 
-  async function uploadImage(file: File, slot: 1 | 2) {
-    slot === 1 ? setUploading1(true) : setUploading2(true);
-    const fd = new FormData();
-    fd.append("file", file);
-    fd.append("context", "bulletin");
-    const res = await fetch("/api/upload", { method: "POST", body: fd }).then((r) => r.json());
-    if (res.url) {
-      setField(slot === 1 ? "image_url_1" : "image_url_2", res.url);
-    } else {
-      showMsg("이미지 업로드 실패: " + (res.error || ""), "err");
-    }
-    slot === 1 ? setUploading1(false) : setUploading2(false);
-  }
-
-  async function parse() {
-    if (!form.image_url_1) return showMsg("이미지 1을 먼저 업로드하세요.", "err");
+  async function runParse(url1: string, url2?: string) {
     setParsing(true);
-    setMsg("");
+    setMsg("이미지를 분석하는 중...");
     const res = await fetch("/api/admin/bulletin/parse", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ imageUrl1: form.image_url_1, imageUrl2: form.image_url_2 || undefined }),
+      body: JSON.stringify({ imageUrl1: url1, imageUrl2: url2 || undefined }),
     }).then((r) => r.json());
 
     if (res.error) {
@@ -101,6 +86,29 @@ export default function AdminBulletinPage() {
       showMsg("분석 완료! 내용을 확인하고 저장하세요.", "ok");
     }
     setParsing(false);
+  }
+
+  async function uploadImage(file: File, slot: 1 | 2) {
+    slot === 1 ? setUploading1(true) : setUploading2(true);
+    const fd = new FormData();
+    fd.append("file", file);
+    fd.append("context", "bulletin");
+    const res = await fetch("/api/upload", { method: "POST", body: fd }).then((r) => r.json());
+    slot === 1 ? setUploading1(false) : setUploading2(false);
+
+    if (res.url) {
+      setField(slot === 1 ? "image_url_1" : "image_url_2", res.url);
+      const url1 = slot === 1 ? res.url : form.image_url_1;
+      const url2 = slot === 2 ? res.url : form.image_url_2;
+      if (url1) await runParse(url1, url2 || undefined);
+    } else {
+      showMsg("이미지 업로드 실패: " + (res.error || ""), "err");
+    }
+  }
+
+  async function parse() {
+    if (!form.image_url_1) return showMsg("이미지 1을 먼저 업로드하세요.", "err");
+    await runParse(form.image_url_1, form.image_url_2 || undefined);
   }
 
   async function save() {
