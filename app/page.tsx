@@ -7,7 +7,7 @@ import { SermonGrid } from "@/components/site/sermon-grid";
 import { WeeklyBulletin } from "@/components/site/weekly-bulletin";
 import { getYoutubeConfig } from "@/lib/site";
 import { fetchYoutubeVideos } from "@/lib/youtube";
-import { BookOpen, Heart, Home, Sun, Users, ArrowRight, Pin } from "lucide-react";
+import { ArrowRight, Pin } from "lucide-react";
 
 async function getSermons() {
   const cfg = await getYoutubeConfig();
@@ -46,8 +46,6 @@ export default async function HomePage() {
   const gallery = _gallery ?? [];
 
   const isNew = (date: string) => Date.now() - new Date(date).getTime() < 24 * 60 * 60 * 1000;
-  const featured = worship.find((w: any) => w.is_featured) || worship[0];
-  const rest = worship.filter((w: any) => w.id !== featured?.id).slice(0, 4);
 
   const extract = (value: string) => {
     const [dayPartRaw, timePartRaw] = value.split("|").map((s) => s.trim());
@@ -55,14 +53,6 @@ export default async function HomePage() {
     const meridiem = timeParts[0] || "";
     const time = timeParts[1] || timePartRaw || "";
     return { day: dayPartRaw || value, meridiem, time };
-  };
-
-  const iconMap: Record<string, typeof BookOpen> = {
-    sun: Sun,
-    "book-open": BookOpen,
-    home: Home,
-    users: Users,
-    heart: Heart,
   };
 
   return (
@@ -119,61 +109,49 @@ export default async function HomePage() {
           <p className="section-title-en">WORSHIP</p>
           <h2 className="section-title-ko">예배 안내</h2>
 
-          <div className="mt-6 grid gap-3 md:mt-8 md:gap-4 md:grid-cols-2">
-            {/* 대표 예배 카드 */}
-            {featured ? (() => {
-              const meta = extract(featured.day_and_time);
-              return (
-                <article className="col-span-full rounded-2xl border border-slate-100 bg-white p-6 shadow-sm transition-all duration-200 hover:shadow-md md:p-10">
-                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#1a2744]/[0.08]">
-                        <Sun className="h-5 w-5 text-[#1a2744]" />
-                      </div>
-                      <div>
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">대표예배</span>
-                        <p className="mt-0.5 font-bold text-[#1a2744]">{featured.name}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-baseline gap-2">
-                      <span className="text-4xl font-bold leading-none text-[#1a2744] md:text-6xl">
-                        {meta.time || "11:00"}
-                      </span>
-                      <span className="pb-1 text-sm text-slate-400">{meta.meridiem || "오전"}</span>
-                    </div>
-                    <div className="text-sm text-slate-500 sm:text-right">
-                      <p className="font-semibold text-[#1a2744]">{meta.day || "매주 주일"}</p>
-                      <p className="mt-0.5">{featured.location}</p>
-                    </div>
-                  </div>
-                </article>
-              );
-            })() : null}
-
-            {/* 나머지 예배 카드 */}
-            {rest.map((w) => {
+          <div className="mt-6 grid grid-cols-2 gap-3 md:mt-8 md:grid-cols-5 md:gap-4">
+            {worship.map((w: any) => {
               const meta = extract(w.day_and_time);
-              const Icon = iconMap[w.icon_name] ?? BookOpen;
               return (
                 <article
                   key={w.id}
-                  className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm transition-all duration-200 hover:shadow-md md:p-7"
+                  className="relative overflow-hidden rounded-2xl bg-white p-5 shadow-sm transition-all duration-200 hover:shadow-md"
                 >
-                  <div className="mb-3 flex items-center gap-3">
-                    <div
-                      className="flex h-9 w-9 items-center justify-center rounded-xl"
-                      style={{ backgroundColor: `${w.accent_color}18` }}
-                    >
-                      <Icon className="h-5 w-5" style={{ color: w.accent_color }} />
-                    </div>
-                    <p className="font-bold text-[#1a2744]">{w.name}</p>
+                  {/* 상단 컬러 라인 */}
+                  <div
+                    className="absolute left-0 right-0 top-0 h-[3px] rounded-t-2xl"
+                    style={{ backgroundColor: w.accent_color }}
+                  />
+
+                  {/* 요일 레이블 */}
+                  <p className="mt-1 text-[9px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+                    {meta.day}
+                  </p>
+
+                  {/* 예배명 */}
+                  <p className="mt-1.5 text-[13px] font-bold leading-snug text-[#1a2744]">
+                    {w.name}
+                  </p>
+
+                  {/* 시간 */}
+                  <div className="mt-3 flex items-baseline gap-1">
+                    <span className="text-2xl font-normal tracking-tight text-[#1a2744]">
+                      {meta.time || meta.meridiem}
+                    </span>
+                    <span className="text-[10px] font-normal text-slate-400">
+                      {meta.meridiem && meta.time ? meta.meridiem : ""}
+                    </span>
                   </div>
-                  <p className="text-2xl font-bold text-[#1a2744] md:text-3xl">
-                    {meta.time || meta.meridiem}
-                  </p>
-                  <p className="mt-2 text-sm text-slate-400">
-                    {meta.day} · {w.location}
-                  </p>
+
+                  {/* 장소 */}
+                  <p className="mt-1 text-[10px] text-slate-400">{w.location}</p>
+
+                  {/* 대표예배 배지 */}
+                  {w.is_featured && (
+                    <span className="mt-3 inline-flex items-center gap-1 rounded-full bg-[#f5c842] px-2 py-0.5 text-[8px] font-bold tracking-wider text-[#1a2744]">
+                      대표
+                    </span>
+                  )}
                 </article>
               );
             })}

@@ -138,7 +138,15 @@ export default function AdminBulletinPage() {
   }
 
   function editItem(b: Bulletin) {
-    setForm(b);
+    setForm({
+      ...b,
+      worship_service: "",
+      church_news: "",
+      prayer_requests: "",
+      sermon_notes: "",
+    });
+    setMsg("수정 모드: 이미지를 다시 업로드하거나 'AI 분석' 버튼을 눌러 내용을 갱신하세요.");
+    setMsgType("ok");
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
