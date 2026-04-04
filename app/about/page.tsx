@@ -52,11 +52,13 @@ export default async function AboutPage() {
         {/* 모바일: 이미지 상단, 텍스트 하단 / 데스크톱: 텍스트 좌측, 이미지 우측 */}
         <div className="flex flex-col gap-6 md:flex-row md:items-start md:gap-12">
           <div className="w-full flex-shrink-0 md:order-last md:w-64 lg:w-72">
-            <img
-              src={settings.pastor_image_url || "/images/pastor-placeholder.jpg"}
-              alt="담임목사"
-              className="h-64 w-full rounded-2xl object-cover object-top sm:h-80 md:h-96"
-            />
+            <div className="aspect-[3/4] w-full overflow-hidden rounded-2xl md:aspect-auto md:h-[420px]">
+              <img
+                src={settings.pastor_image_url || "/images/pastor-placeholder.jpg"}
+                alt="담임목사"
+                className="h-full w-full object-cover object-center"
+              />
+            </div>
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-xs font-semibold uppercase tracking-widest text-slate-400">담임목사</p>
@@ -78,11 +80,13 @@ export default async function AboutPage() {
             <div className="flex flex-col gap-6 md:flex-row md:items-start md:gap-12">
               {settings.senior_pastor_image_url && (
                 <div className="w-full flex-shrink-0 md:order-last md:w-64 lg:w-72">
-                  <img
-                    src={settings.senior_pastor_image_url}
-                    alt="원로목사"
-                    className="h-64 w-full rounded-2xl object-cover object-top sm:h-80 md:h-96"
-                  />
+                  <div className="aspect-[3/4] w-full overflow-hidden rounded-2xl md:aspect-auto md:h-[420px]">
+                    <img
+                      src={settings.senior_pastor_image_url}
+                      alt="원로목사"
+                      className="h-full w-full object-cover object-center"
+                    />
+                  </div>
                 </div>
               )}
               <div className="flex-1 min-w-0">
