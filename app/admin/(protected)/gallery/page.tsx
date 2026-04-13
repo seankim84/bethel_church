@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { TiptapEditor } from "@/components/admin/tiptap-editor";
 
 type GalleryPost = {
@@ -17,24 +17,36 @@ export default function AdminGalleryPage() {
   const [items, setItems] = useState<GalleryPost[]>([]);
   const [form, setForm] = useState<GalleryPost>(init);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [msg, setMsg] = useState("");
+  const pendingUploadsRef = useRef(0);
 
   const load = () => fetch("/api/gallery").then((r) => r.json()).then((d) => setItems(d.items || []));
   useEffect(() => { load(); }, []);
 
   async function upload(files: FileList | null) {
     if (!files) return;
+    pendingUploadsRef.current += 1;
+    setUploading(true);
     const uploaded: string[] = [];
-    for (const file of Array.from(files)) {
-      const fd = new FormData();
-      fd.append("file", file);
-      fd.append("context", "gallery");
-      const up = await fetch("/api/upload", { method: "POST", body: fd }).then((r) => r.json());
-      if (up?.url) uploaded.push(up.url);
-      else if (up?.error) setMsg("업로드 실패: " + up.error);
-    }
-    if (uploaded.length) {
-      setForm((prev) => ({ ...prev, images: [...prev.images, ...uploaded] }));
+    try {
+      for (const file of Array.from(files)) {
+        const fd = new FormData();
+        fd.append("file", file);
+        fd.append("context", "gallery");
+
+        const res = await fetch("/api/upload", { method: "POST", body: fd });
+        const up = await res.json();
+        if (res.ok && up?.url) uploaded.push(up.url);
+        else if (up?.error) setMsg("업로드 실패: " + up.error);
+        else setMsg("업로드 실패: 알 수 없는 오류가 발생했습니다.");
+      }
+      if (uploaded.length) {
+        setForm((prev) => ({ ...prev, images: [...prev.images, ...uploaded] }));
+      }
+    } finally {
+      pendingUploadsRef.current = Math.max(0, pendingUploadsRef.current - 1);
+      if (pendingUploadsRef.current === 0) setUploading(false);
     }
   }
 
@@ -44,6 +56,7 @@ export default function AdminGalleryPage() {
 
   async function save() {
     if (!form.title) return setMsg("제목을 입력하세요.");
+    if (pendingUploadsRef.current > 0) return setMsg("이미지 업로드가 완료된 후 저장해주세요.");
     setSaving(true);
     const res = await fetch("/api/gallery", {
       method: form.id ? "PUT" : "POST",
@@ -82,6 +95,7 @@ export default function AdminGalleryPage() {
         <div className="space-y-2">
           <p className="text-sm text-slate-600">이미지 첨부 (여러 장 선택 가능)</p>
           <input type="file" multiple accept="image/*" onChange={(e) => upload(e.target.files)} />
+          {uploading && <p className="text-xs text-slate-500">이미지 업로드 중입니다...</p>}
           {form.images.length > 0 && (
             <div className="grid grid-cols-3 gap-2 md:grid-cols-5">
               {form.images.map((url) => (
@@ -97,7 +111,9 @@ export default function AdminGalleryPage() {
         </div>
         {msg && <p className="text-sm text-slate-600">{msg}</p>}
         <div className="flex gap-2">
-          <button className="admin-btn" onClick={save} disabled={saving}>{saving ? "저장 중..." : form.id ? "수정" : "등록"}</button>
+          <button className="admin-btn" onClick={save} disabled={saving || uploading}>
+            {saving ? "저장 중..." : uploading ? "이미지 업로드 중..." : form.id ? "수정" : "등록"}
+          </button>
           {form.id && <button className="rounded-md bg-slate-100 px-4 py-2 text-sm" onClick={() => { setForm(init); setMsg(""); }}>취소</button>}
         </div>
       </div>

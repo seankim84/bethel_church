@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 
 type GalleryImage = { id: number; url: string; order: number };
 type GalleryPost = { id: number; title: string; content: string; category: string; images: GalleryImage[]; created_at: string };
@@ -15,7 +16,6 @@ export default function GalleryPage() {
   const [posts, setPosts] = useState<GalleryPost[]>([]);
   const [cat, setCat] = useState<(typeof categories)[number]>("전체");
   const [page, setPage] = useState(1);
-  const [activeUrl, setActiveUrl] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/gallery")
@@ -73,41 +73,39 @@ export default function GalleryPage() {
           const excerpt = stripHtml(post.content).slice(0, 100);
           const thumb = post.images?.[0]?.url ?? null;
           return (
-            <article
-              key={post.id}
-              className="flex items-start gap-5 py-7 cursor-pointer group"
-              onClick={() => thumb && setActiveUrl(thumb)}
-            >
-              {/* 텍스트 영역 */}
-              <div className="flex-1 min-w-0">
-                <p className={`mb-2 text-xs font-semibold ${categoryColor[post.category] ?? "text-slate-500"}`}>
-                  {post.category}
-                </p>
-                <h2 className="text-lg font-bold leading-snug text-slate-900 group-hover:text-[#0f1f3d] transition line-clamp-2">
-                  {post.title}
-                </h2>
-                {excerpt && (
-                  <p className="mt-2 text-sm leading-relaxed text-slate-500 line-clamp-2">
-                    {excerpt}
-                    {stripHtml(post.content).length > 100 ? "…" : ""}
+            <Link key={post.id} href={`/gallery/${post.id}`} className="block">
+              <article className="flex items-start gap-5 py-7 cursor-pointer group">
+                {/* 텍스트 영역 */}
+                <div className="flex-1 min-w-0">
+                  <p className={`mb-2 text-xs font-semibold ${categoryColor[post.category] ?? "text-slate-500"}`}>
+                    {post.category}
                   </p>
-                )}
-                <p className="mt-4 text-xs text-slate-400">
-                  {new Date(post.created_at).toLocaleDateString("ko-KR", { year: "numeric", month: "long", day: "numeric" })}
-                </p>
-              </div>
-
-              {/* 썸네일 */}
-              {thumb && (
-                <div className="flex-none w-28 h-20 overflow-hidden rounded-lg md:w-40 md:h-28">
-                  <img
-                    src={thumb}
-                    alt={post.title}
-                    className="h-full w-full object-cover transition group-hover:scale-105"
-                  />
+                  <h2 className="text-lg font-bold leading-snug text-slate-900 group-hover:text-[#0f1f3d] transition line-clamp-2">
+                    {post.title}
+                  </h2>
+                  {excerpt && (
+                    <p className="mt-2 text-sm leading-relaxed text-slate-500 line-clamp-2">
+                      {excerpt}
+                      {stripHtml(post.content).length > 100 ? "…" : ""}
+                    </p>
+                  )}
+                  <p className="mt-4 text-xs text-slate-400">
+                    {new Date(post.created_at).toLocaleDateString("ko-KR", { year: "numeric", month: "long", day: "numeric" })}
+                  </p>
                 </div>
-              )}
-            </article>
+
+                {/* 썸네일 */}
+                {thumb && (
+                  <div className="flex-none w-28 h-20 overflow-hidden rounded-lg md:w-40 md:h-28">
+                    <img
+                      src={thumb}
+                      alt={post.title}
+                      className="h-full w-full object-cover transition group-hover:scale-105"
+                    />
+                  </div>
+                )}
+              </article>
+            </Link>
           );
         })}
       </div>
@@ -143,15 +141,6 @@ export default function GalleryPage() {
         </div>
       )}
 
-      {/* 이미지 확대 모달 */}
-      {activeUrl ? (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
-          onClick={() => setActiveUrl(null)}
-        >
-          <img src={activeUrl} alt="확대" className="max-h-[90vh] max-w-full rounded-md" />
-        </div>
-      ) : null}
     </div>
   );
 }
